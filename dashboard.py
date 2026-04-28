@@ -6,10 +6,18 @@ UAC Healthcare System Capacity Analytics — Streamlit Dashboard
 Run with:
     streamlit run dashboard.py -- --data /path/to/file.csv
 
-Version: 1.2.0
+Version: 1.3.0
 """
 
+import subprocess
+import sys
 import re
+
+# Auto-install ML dependencies if missing
+try:
+    import sklearn
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn", "-q"])
 import argparse
 from pathlib import Path
 
