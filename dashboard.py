@@ -22,6 +22,13 @@ from plotly.subplots import make_subplots
 
 from data_processing import run_pipeline, resample_data
 from metrics import compute_kpis, generate_insights, generate_executive_summary
+from forecasting import (
+    run_rf_forecast,
+    run_prophet_forecast,
+    format_metrics_table,
+    FORECAST_TARGETS,
+    _prophet_available,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -716,13 +723,14 @@ def main():
     spacer("2rem")
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "System overview",
         "CBP vs. HHS",
         "Intake and backlog",
         "Metric comparison",
         "Findings",
         "Data quality",
+        "🔮 Forecast (ML)",
     ])
 
     # ── Tab 1: System overview ────────────────────────────────────────────────
@@ -1048,6 +1056,282 @@ def main():
                 file_name="UAC_filtered_data.csv",
                 mime="text/csv",
                 use_container_width=True,
+            )
+
+    # ── Tab 7: ML Forecast ────────────────────────────────────────────────────
+    with tab7:
+        spacer("0.5rem")
+        section("ML-Powered Demand Forecasting")
+
+        st.markdown(
+            '<div class="insight-card">'
+            'Two models are available. <b>Random Forest</b> (sklearn) engineers lag features '
+            '(1d, 7d, 14d, 30d rolling statistics) and trains a regression tree ensemble — '
+            'this is the core ML model. <b>Prophet</b> (Meta) fits an additive trend + '
+            'weekly + yearly seasonality model. Both are evaluated on a 60-day held-out '
+            'test set before forecasting forward.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        spacer("0.75rem")
+
+        # ── Controls ─────────────────────────────────────────────────────────
+        fc1, fc2, fc3, fc4 = st.columns([1.4, 1, 1, 1.6])
+        with fc1:
+            fc_target_label = st.selectbox(
+                "Target metric",
+                list(FORECAST_TARGETS.keys()),
+                key="fc_target",
+            )
+        with fc2:
+            fc_horizon = st.selectbox(
+                "Forecast horizon",
+                [30, 60, 90],
+                index=1,
+                format_func=lambda x: f"{x} days",
+                key="fc_horizon",
+            )
+        with fc3:
+            fc_model = st.radio(
+                "Model",
+                ["Random Forest", "Prophet"] if _prophet_available() else ["Random Forest"],
+                key="fc_model",
+            )
+            if not _prophet_available() and fc_model == "Prophet":
+                st.caption("Install `prophet` to enable: `pip install prophet`")
+        with fc4:
+            spacer("1.5rem")
+            run_forecast = st.button("▶  Run forecast", type="primary", use_container_width=True)
+
+        # ── Run & cache in session state ──────────────────────────────────────
+        cache_key = f"{fc_target_label}|{fc_horizon}|{fc_model}"
+        if run_forecast or st.session_state.get("_fc_cache_key") == cache_key:
+            if run_forecast or "fc_rf_result" not in st.session_state:
+                target_col = FORECAST_TARGETS[fc_target_label]
+
+                with st.spinner("Training model and generating forecast…"):
+                    rf_result = run_rf_forecast(df_filtered, target_col, fc_horizon)
+                    prophet_result = (
+                        run_prophet_forecast(df_filtered, target_col, fc_horizon)
+                        if fc_model == "Prophet" else None
+                    )
+
+                st.session_state["fc_rf_result"]      = rf_result
+                st.session_state["fc_prophet_result"] = prophet_result
+                st.session_state["fc_target_col"]     = target_col
+                st.session_state["fc_target_label"]   = fc_target_label
+                st.session_state["fc_horizon"]        = fc_horizon
+                st.session_state["_fc_cache_key"]     = cache_key
+
+            rf_result      = st.session_state["fc_rf_result"]
+            prophet_result = st.session_state.get("fc_prophet_result")
+            target_col     = st.session_state["fc_target_col"]
+            target_label   = st.session_state["fc_target_label"]
+            horizon_used   = st.session_state["fc_horizon"]
+
+            active_result  = prophet_result if (fc_model == "Prophet" and prophet_result) else rf_result
+            active_metrics = active_result["metrics"]
+
+            # ── Metric cards ─────────────────────────────────────────────────
+            spacer("1rem")
+            section(f"{fc_model} — {horizon_used}-day forecast · {target_label}")
+            m1, m2, m3, m4 = st.columns(4)
+            with m1:
+                kpi_card("MAE", f"{active_metrics['MAE']:,}",
+                         "Mean absolute error (children) on 60-day test set")
+            with m2:
+                kpi_card("RMSE", f"{active_metrics['RMSE']:,}",
+                         "Root mean squared error on test set")
+            with m3:
+                mape_val = active_metrics['MAPE']
+                mape_nt  = "good" if mape_val < 10 else ("warn" if mape_val < 20 else "alert")
+                kpi_card("MAPE", f"{mape_val}%",
+                         "Mean absolute % error — lower is better", mape_nt)
+            with m4:
+                r2_val = active_result["metrics"].get("R²", "—")
+                r2_nt  = "good" if isinstance(r2_val, float) and r2_val > 0.85 else "warn"
+                kpi_card("R²", str(r2_val),
+                         "Variance explained on test set", r2_nt)
+
+            spacer("1.5rem")
+
+            # ── Main forecast chart ───────────────────────────────────────────
+            section("Forecast")
+            fc_df = active_result["forecast_df"]
+
+            # Clip display of historical data to last 180 days for readability
+            hist_cutoff = df_filtered["date"].max() - pd.Timedelta(days=180)
+            hist_plot   = df_filtered[df_filtered["date"] >= hist_cutoff]
+
+            fig_fc = go.Figure()
+
+            # Historical actual
+            fig_fc.add_trace(go.Scatter(
+                x=hist_plot["date"], y=hist_plot[target_col],
+                mode="lines", name="Actual (historical)",
+                line=dict(color=C["blue"], width=2),
+            ))
+
+            # Test-set back-fill (model fit on test window)
+            test_df = active_result["test_df"]
+            fig_fc.add_trace(go.Scatter(
+                x=test_df["date"], y=test_df["predicted"],
+                mode="lines", name="Model fit (test set)",
+                line=dict(color=C["purple"], width=2, dash="dot"),
+            ))
+
+            # Confidence band
+            fig_fc.add_trace(go.Scatter(
+                x=pd.concat([fc_df["date"], fc_df["date"][::-1]]),
+                y=pd.concat([fc_df["upper"], fc_df["lower"][::-1]]),
+                fill="toself",
+                fillcolor="rgba(217,119,6,0.12)",
+                line=dict(color="rgba(0,0,0,0)"),
+                name="95% confidence band",
+                hoverinfo="skip",
+            ))
+
+            # Forecast line
+            fig_fc.add_trace(go.Scatter(
+                x=fc_df["date"], y=fc_df["forecast"],
+                mode="lines", name=f"{fc_model} forecast",
+                line=dict(color=C["orange"], width=2.5),
+            ))
+
+            # Divider between history and future
+            fig_fc.add_vline(
+                x=df_filtered["date"].max(),
+                line_color="#94a3b8", line_width=1, line_dash="dash",
+            )
+            fig_fc.add_annotation(
+                x=df_filtered["date"].max(), y=fc_df["forecast"].max(),
+                text="Forecast start", showarrow=False,
+                font=dict(size=11, color="#94a3b8"),
+                xanchor="left", xshift=6,
+            )
+
+            fig_fc.update_layout(
+                **CHART_BASE,
+                title=f"{target_label} — {horizon_used}-day {fc_model} forecast with 95% confidence band",
+                xaxis_title="Date",
+                yaxis_title="Children",
+                hovermode="x unified",
+                legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
+            )
+            st.plotly_chart(fig_fc, use_container_width=True)
+
+            spacer("1.5rem")
+
+            # ── Secondary row: test-set fit + feature importance ─────────────
+            col_a, col_b = st.columns(2)
+
+            with col_a:
+                section("Test-set actual vs predicted (last 60 days)")
+                fig_test = go.Figure()
+                fig_test.add_trace(go.Scatter(
+                    x=test_df["date"], y=test_df["actual"],
+                    mode="lines", name="Actual",
+                    line=dict(color=C["blue"], width=2),
+                ))
+                fig_test.add_trace(go.Scatter(
+                    x=test_df["date"], y=test_df["predicted"],
+                    mode="lines", name="Predicted",
+                    line=dict(color=C["orange"], width=2, dash="dot"),
+                ))
+                fig_test.update_layout(
+                    **CHART_BASE,
+                    title="Held-out evaluation — how well the model tracks unseen data",
+                    hovermode="x unified",
+                )
+                st.plotly_chart(fig_test, use_container_width=True)
+
+            with col_b:
+                if fc_model == "Random Forest":
+                    section("Feature importances (Random Forest)")
+                    imps = rf_result["importances"]
+                    fig_imp = go.Figure(go.Bar(
+                        x=imps.values,
+                        y=imps.index.tolist(),
+                        orientation="h",
+                        marker_color=C["purple"],
+                        opacity=0.85,
+                        text=[f"{v:.3f}" for v in imps.values],
+                        textposition="outside",
+                    ))
+                    fig_imp.update_layout(
+                        **CHART_BASE,
+                        title="Which lag features drive the forecast most",
+                        xaxis_title="Importance",
+                        yaxis_title="",
+                        margin=dict(l=100, r=40, t=56, b=44),
+                    )
+                    st.plotly_chart(fig_imp, use_container_width=True)
+
+                    st.markdown(
+                        '<div class="insight-card">'
+                        'Features ranked by mean decrease in impurity across all 300 trees. '
+                        'A high <b>Lag 1d</b> importance means yesterday\'s count is the '
+                        'strongest predictor of today\'s — expected for a slowly-evolving '
+                        'census. Longer lags (7d, 14d) capture weekly and bi-weekly seasonality. '
+                        'The 7-day rolling mean smooths noise and is often the second most '
+                        'informative signal.'
+                        '</div>',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    section("Prophet model components")
+                    st.markdown(
+                        '<div class="insight-card">'
+                        'Prophet decomposes the signal into three additive components: '
+                        '<b>trend</b> (long-run direction captured via changepoints), '
+                        '<b>weekly seasonality</b> (day-of-week reporting patterns), and '
+                        '<b>yearly seasonality</b> (migration cycles). '
+                        'The forecast above reflects all three combined with a 95% '
+                        'uncertainty interval.'
+                        '</div>',
+                        unsafe_allow_html=True,
+                    )
+
+            spacer("1.5rem")
+
+            # ── Model comparison table ────────────────────────────────────────
+            section("Model performance comparison (60-day test set)")
+            cmp_df = format_metrics_table(
+                rf_result["metrics"],
+                prophet_result["metrics"] if prophet_result else None,
+            )
+            st.dataframe(cmp_df, use_container_width=True, hide_index=True)
+
+            st.markdown(
+                '<div class="insight-card">'
+                '<b>Interpreting these metrics:</b> '
+                'MAE and RMSE are in units of children — lower is better. '
+                'MAPE below 10% is considered strong for a 60-day demand forecast. '
+                'R² close to 1.0 means the model explains most variance in the held-out data. '
+                'Both models are trained only on data before the test window to prevent leakage.'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+
+            spacer("1rem")
+
+            # ── Download forecast ─────────────────────────────────────────────
+            dl_df = fc_df.copy()
+            dl_df["date"]     = dl_df["date"].dt.strftime("%Y-%m-%d")
+            dl_df["model"]    = fc_model
+            dl_df["target"]   = target_label
+            st.download_button(
+                "Download forecast as CSV",
+                data=dl_df.to_csv(index=False),
+                file_name=f"UAC_forecast_{fc_model.lower().replace(' ', '_')}.csv",
+                mime="text/csv",
+                use_container_width=False,
+            )
+
+        else:
+            st.info(
+                "Configure the target metric, horizon, and model above, "
+                "then click **▶ Run forecast** to generate predictions."
             )
 
     # ── Footer ────────────────────────────────────────────────────────────────
