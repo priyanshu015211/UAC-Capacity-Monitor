@@ -915,8 +915,8 @@ def main():
                 barmode="group",
                 yaxis_title="Children",
                 xaxis_title="",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
             )
+            fig_cmp2.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0))
             st.plotly_chart(fig_cmp2, use_container_width=True)
 
             # Discharge ratio comparison as a small stat block
