@@ -7,7 +7,7 @@
 ![Status](https://img.shields.io/badge/Status-Live-brightgreen)
 ![Internship](https://img.shields.io/badge/Unified%20Mentor-Internship%20Project-orange)
 
-A production-ready analytics dashboard for monitoring healthcare system capacity in the U.S. HHS Unaccompanied Children (UAC) program. Built on real operational data from 2023 to 2025, it tracks daily care load across CBP and HHS facilities, measures intake and discharge flow, detects capacity stress periods, and generates automated insights and policy-ready reports.
+A production-ready analytics dashboard for monitoring healthcare system capacity in the HHS Unaccompanied Children (UAC) program. Tracks daily care load across CBP and HHS facilities, measures intake and discharge flow, detects capacity stress periods, and generates automated insights and policy-ready reports.
 
 **Live demo:** [priyanshu-uac-dashboard.streamlit.app](https://priyanshu-uac-dashboard.streamlit.app)
 
@@ -257,8 +257,8 @@ All records are checked against three business rules. Violations are flagged but
 
 ## Data Source
 
-U.S. Department of Health and Human Services — Office of Refugee Resettlement  
-HHS Unaccompanied Children Program Daily Monitoring Reports (2023–2025)
+HHS Unaccompanied Children Program — Daily Monitoring Reports (2023–2025)  
+Dataset provided by Unified Mentor as part of the Data Analytics Internship program.
 
 ---
 
