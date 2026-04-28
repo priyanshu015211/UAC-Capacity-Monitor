@@ -55,7 +55,7 @@ From a healthcare systems perspective, this program operates as a dynamic care p
 Apprehension → CBP Custody → Transfer to HHS → Care & Support → Discharge to Sponsor
 ```
 
-Effective management of this pipeline requires continuous capacity awareness — especially during sudden influxes that risk overcrowding and delayed care.
+Effective management of this pipeline requires continuous capacity awareness especially during sudden influxes that risk overcrowding and delayed care.
 
 ---
 
@@ -68,7 +68,7 @@ Although daily operational data is collected, HHS lacks a centralized analytical
 - Periods of capacity stress and relief
 - Sustainability of care delivery over time
 
-Without structured analytics, decision-making becomes reactive — increasing the risk of overcrowding, delayed care, and strain on healthcare infrastructure.
+Without structured analytics, decision-making becomes reactive increasing the risk of overcrowding, delayed care, and strain on healthcare infrastructure.
 
 ---
 
