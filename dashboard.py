@@ -9,15 +9,7 @@ Run with:
 Version: 1.3.0
 """
 
-import subprocess
-import sys
 import re
-
-# Auto-install ML dependencies if missing
-try:
-    import sklearn
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "scikit-learn", "-q"])
 import argparse
 from pathlib import Path
 
