@@ -1140,14 +1140,14 @@ def main():
                 st.session_state["fc_prophet_result"] = prophet_result
                 st.session_state["fc_target_col"]     = target_col
                 st.session_state["fc_target_label"]   = fc_target_label
-                st.session_state["fc_horizon"]        = fc_horizon
+                st.session_state["_fc_horizon_used"]  = fc_horizon  # separate key — fc_horizon is widget-bound
                 st.session_state["_fc_cache_key"]     = cache_key
 
             rf_result      = st.session_state["fc_rf_result"]
             prophet_result = st.session_state.get("fc_prophet_result")
             target_col     = st.session_state["fc_target_col"]
             target_label   = st.session_state["fc_target_label"]
-            horizon_used   = st.session_state["fc_horizon"]
+            horizon_used   = st.session_state["_fc_horizon_used"]
 
             active_result  = prophet_result if (fc_model == "Prophet" and prophet_result) else rf_result
             active_metrics = active_result["metrics"]
