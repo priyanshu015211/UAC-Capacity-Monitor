@@ -1083,16 +1083,6 @@ def main():
             )
             st.stop()
 
-        st.markdown(
-            '<div class="insight-card">'
-            'Two models are available. <b>Random Forest</b> (sklearn) engineers lag features '
-            '(1d, 7d, 14d, 30d rolling statistics) and trains a regression tree ensemble — '
-            'this is the core ML model. <b>Prophet</b> (Meta) fits an additive trend + '
-            'weekly + yearly seasonality model. Both are evaluated on a 60-day held-out '
-            'test set before forecasting forward.'
-            '</div>',
-            unsafe_allow_html=True,
-        )
         spacer("0.75rem")
 
         # ── Controls ─────────────────────────────────────────────────────────
