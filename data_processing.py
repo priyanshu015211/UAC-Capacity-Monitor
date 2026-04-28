@@ -269,6 +269,7 @@ def resample_data(df: pd.DataFrame, granularity: str = "D") -> pd.DataFrame:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def run_pipeline(filepath: str):
+    
     """
     Execute Steps 1-3 end-to-end and return all artefacts.
 
