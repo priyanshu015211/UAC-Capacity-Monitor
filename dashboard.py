@@ -33,8 +33,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.markdown('<style>:root { color-scheme: light; }</style>', unsafe_allow_html=True)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GLOBAL STYLES
@@ -859,23 +857,61 @@ def main():
         df_early = df_filtered[df_filtered["date"] <= mid_date]
         df_late  = df_filtered[df_filtered["date"] >  mid_date]
         if len(df_early) > 0 and len(df_late) > 0:
-            def _period_stats(d):
+            def _period_stats_raw(d):
                 return {
-                    "Avg children in care":    f"{d['total_system_load'].mean():,.0f}",
-                    "Avg HHS care":            f"{d['hhs_care'].mean():,.0f}",
-                    "Avg CBP custody":         f"{d['cbp_custody'].mean():,.0f}",
-                    "Avg daily net intake":    f"{d['net_daily_intake'].mean():+.1f}",
-                    "Discharge ratio":         f"{(d['hhs_discharged'].sum()/d['cbp_transfers'].sum()*100) if d['cbp_transfers'].sum()>0 else 0:.1f}%",
-                    "Peak load":               f"{d['total_system_load'].max():,.0f}",
+                    "Avg children in care": d['total_system_load'].mean(),
+                    "Avg HHS care":         d['hhs_care'].mean(),
+                    "Avg CBP custody":      d['cbp_custody'].mean(),
+                    "Peak load":            d['total_system_load'].max(),
                 }
-            stats_e = _period_stats(df_early)
-            stats_l = _period_stats(df_late)
-            cmp_df = pd.DataFrame({
-                "Metric": list(stats_e.keys()),
-                f"Early ({df_early['date'].min().strftime('%b %Y')} \u2013 {df_early['date'].max().strftime('%b %Y')})": list(stats_e.values()),
-                f"Late  ({df_late['date'].min().strftime('%b %Y')} \u2013 {df_late['date'].max().strftime('%b %Y')})":   list(stats_l.values()),
-            })
-            st.dataframe(cmp_df, use_container_width=True, hide_index=True)
+            stats_e = _period_stats_raw(df_early)
+            stats_l = _period_stats_raw(df_late)
+            early_label = f"Early ({df_early['date'].min().strftime('%b %Y')} – {df_early['date'].max().strftime('%b %Y')})"
+            late_label  = f"Late  ({df_late['date'].min().strftime('%b %Y')} – {df_late['date'].max().strftime('%b %Y')})"
+            metrics_list = list(stats_e.keys())
+            fig_cmp2 = go.Figure()
+            fig_cmp2.add_trace(go.Bar(
+                name=early_label,
+                x=metrics_list,
+                y=[stats_e[m] for m in metrics_list],
+                marker_color=C["blue"],
+                opacity=0.85,
+                text=[f"{stats_e[m]:,.0f}" for m in metrics_list],
+                textposition="outside",
+            ))
+            fig_cmp2.add_trace(go.Bar(
+                name=late_label,
+                x=metrics_list,
+                y=[stats_l[m] for m in metrics_list],
+                marker_color=C["orange"],
+                opacity=0.85,
+                text=[f"{stats_l[m]:,.0f}" for m in metrics_list],
+                textposition="outside",
+            ))
+            fig_cmp2.update_layout(
+                **CHART_BASE,
+                title="Early vs late period — average care load comparison",
+                barmode="group",
+                yaxis_title="Children",
+                xaxis_title="",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+            )
+            st.plotly_chart(fig_cmp2, use_container_width=True)
+
+            # Discharge ratio comparison as a small stat block
+            dr_e = (df_early['hhs_discharged'].sum()/df_early['cbp_transfers'].sum()*100) if df_early['cbp_transfers'].sum()>0 else 0
+            dr_l = (df_late['hhs_discharged'].sum()/df_late['cbp_transfers'].sum()*100) if df_late['cbp_transfers'].sum()>0 else 0
+            ni_e = df_early['net_daily_intake'].mean()
+            ni_l = df_late['net_daily_intake'].mean()
+            sc1, sc2, sc3, sc4 = st.columns(4)
+            with sc1:
+                kpi_card("Discharge ratio — early", f"{dr_e:.1f}%")
+            with sc2:
+                kpi_card("Discharge ratio — late", f"{dr_l:.1f}%")
+            with sc3:
+                kpi_card("Avg net intake — early", f"{ni_e:+.1f}/day")
+            with sc4:
+                kpi_card("Avg net intake — late", f"{ni_l:+.1f}/day")
 
         spacer("1.5rem")
         col_l, col_r = st.columns(2)
@@ -913,12 +949,24 @@ def main():
         spacer("1rem")
         from metrics import generate_research_paper
         research_paper = generate_research_paper(df_filtered, kpis_f, insights_f)
-        st.download_button(
-            "Download full report (Markdown)",
-            data=research_paper,
-            file_name="UAC_Capacity_Report.md",
-            mime="text/markdown",
-        )
+        exec_dl = strip_emoji(generate_executive_summary(kpis_f, insights_f))
+        dl1, dl2 = st.columns(2)
+        with dl1:
+            st.download_button(
+                "Download full report (Markdown)",
+                data=research_paper,
+                file_name="UAC_Capacity_Report.md",
+                mime="text/markdown",
+                use_container_width=True,
+            )
+        with dl2:
+            st.download_button(
+                "Download executive summary (Markdown)",
+                data=exec_dl,
+                file_name="UAC_Executive_Summary.md",
+                mime="text/markdown",
+                use_container_width=True,
+            )
 
     # ── Tab 6: Data quality ───────────────────────────────────────────────────
     with tab6:
@@ -994,6 +1042,13 @@ def main():
             ]].copy()
             display_df["date"] = display_df["date"].dt.strftime("%Y-%m-%d")
             st.dataframe(display_df, use_container_width=True, hide_index=True)
+            st.download_button(
+                "Download filtered data as CSV",
+                data=display_df.to_csv(index=False),
+                file_name="UAC_filtered_data.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
 
     # ── Footer ────────────────────────────────────────────────────────────────
     st.markdown(
