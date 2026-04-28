@@ -297,4 +297,4 @@ Dataset provided by Unified Mentor as part of the Data Analytics Internship prog
 
 ---
 
-*Built during a Data Analytics internship at Unified Mentor · April 2026*
+*Built during a Machine Learning internship at Unified Mentor · April 2026*
