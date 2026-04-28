@@ -24,10 +24,18 @@ Version: 2.0.0
 import warnings
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 warnings.filterwarnings("ignore")
+
+
+# ── Availability checks (lazy — no top-level import of heavy packages) ────────
+
+def _sklearn_available() -> bool:
+    try:
+        import sklearn  # noqa: F401
+        return True
+    except ImportError:
+        return False
 
 # ── Targets exposed to the dashboard ─────────────────────────────────────────
 FORECAST_TARGETS = {
@@ -139,6 +147,15 @@ def run_rf_forecast(
       importances  : pd.Series     feature importances (sorted asc)
       test_df      : pd.DataFrame  [date, actual, predicted] on hold-out
     """
+    # Lazy import — won't crash app at startup if sklearn is still installing
+    try:
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.metrics import mean_absolute_error, mean_squared_error
+    except ImportError:
+        raise RuntimeError(
+            "scikit-learn is not installed. Run: pip install scikit-learn"
+        )
+
     series = df.set_index("date")[target_col].dropna().asfreq("D").ffill()
     feat_df = _make_lag_features(series)
 
@@ -231,6 +248,7 @@ def run_prophet_forecast(
         return None
 
     from prophet import Prophet  # type: ignore
+    from sklearn.metrics import mean_absolute_error, mean_squared_error  # type: ignore
 
     prophet_df = (
         df[["date", target_col]]
