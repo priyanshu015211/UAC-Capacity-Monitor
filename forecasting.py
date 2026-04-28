@@ -1,4 +1,3 @@
-from sklearn.ensemble import RandomForestRegressor
 """
 forecasting.py
 ==============
