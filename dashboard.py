@@ -22,13 +22,26 @@ from plotly.subplots import make_subplots
 
 from data_processing import run_pipeline, resample_data
 from metrics import compute_kpis, generate_insights, generate_executive_summary
-from forecasting import (
-    run_rf_forecast,
-    run_prophet_forecast,
-    format_metrics_table,
-    FORECAST_TARGETS,
-    _prophet_available,
-)
+
+try:
+    from forecasting import (
+        run_rf_forecast,
+        run_prophet_forecast,
+        format_metrics_table,
+        FORECAST_TARGETS,
+        _prophet_available,
+    )
+    _FORECASTING_AVAILABLE = True
+except Exception as _fc_err:
+    _FORECASTING_AVAILABLE = False
+    _fc_err_msg = str(_fc_err)
+    FORECAST_TARGETS = {"Total System Load": "total_system_load"}
+    def _prophet_available(): return False
+    def run_rf_forecast(*a, **k): return {}
+    def run_prophet_forecast(*a, **k): return None
+    def format_metrics_table(*a, **k):
+        import pandas as pd
+        return pd.DataFrame()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1062,6 +1075,13 @@ def main():
     with tab7:
         spacer("0.5rem")
         section("ML-Powered Demand Forecasting")
+
+        if not _FORECASTING_AVAILABLE:
+            st.error(
+                f"⚠️ Forecasting module failed to load: `{_fc_err_msg}`\n\n"
+                "Run `pip install scikit-learn prophet` then reboot the app."
+            )
+            st.stop()
 
         st.markdown(
             '<div class="insight-card">'
