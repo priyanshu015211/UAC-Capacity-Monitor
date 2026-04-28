@@ -1236,6 +1236,8 @@ def main():
                 xaxis_title="Date",
                 yaxis_title="Children",
                 hovermode="x unified",
+            )
+            fig_fc.update_layout(
                 legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
             )
             st.plotly_chart(fig_fc, use_container_width=True)
