@@ -1239,6 +1239,13 @@ def main():
             )
             fig_fc.update_layout(
                 legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
+                hoverlabel=dict(
+                    bgcolor="#1e293b",
+                    font_color="#f8fafc",
+                    bordercolor="#334155",
+                    font_size=12,
+                    namelength=-1,
+                ),
             )
             st.plotly_chart(fig_fc, use_container_width=True)
 
@@ -1285,6 +1292,8 @@ def main():
                         title="Which lag features drive the forecast most",
                         xaxis_title="Importance",
                         yaxis_title="",
+                    )
+                    fig_imp.update_layout(
                         margin=dict(l=100, r=40, t=56, b=44),
                     )
                     st.plotly_chart(fig_imp, use_container_width=True)
