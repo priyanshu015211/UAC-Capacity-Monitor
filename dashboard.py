@@ -221,7 +221,7 @@ CHART_BASE = dict(
     yaxis=dict(gridcolor="#f1f5f9", linecolor="#e2e8f0", showgrid=True, tickfont=dict(size=12)),
     legend=dict(bgcolor="rgba(255,255,255,0)", bordercolor="#e2e8f0", borderwidth=1, font=dict(size=12)),
     margin=dict(l=48, r=24, t=56, b=44),
-    hoverlabel=dict(bgcolor="#1e293b", font_color="#f8fafc", bordercolor="#334155", font_size=12),
+    hoverlabel=dict(bgcolor="#1e293b", font_color="#f8fafc", bordercolor="#334155", font_size=12, namelength=-1),
     title_font=dict(size=15, color="#1e293b", family="Inter, sans-serif"),
     title_x=0,
     title_pad=dict(b=14),
@@ -743,7 +743,7 @@ def main():
         "Metric comparison",
         "Findings",
         "Data quality",
-        "🔮 Forecast (ML)",
+        "Forecast (ML)",
     ])
 
     # ── Tab 1: System overview ────────────────────────────────────────────────
@@ -1239,13 +1239,6 @@ def main():
             )
             fig_fc.update_layout(
                 legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
-                hoverlabel=dict(
-                    bgcolor="#1e293b",
-                    font_color="#f8fafc",
-                    bordercolor="#334155",
-                    font_size=12,
-                    namelength=-1,
-                ),
             )
             st.plotly_chart(fig_fc, use_container_width=True)
 
