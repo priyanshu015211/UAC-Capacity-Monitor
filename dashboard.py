@@ -108,13 +108,22 @@ html, body, [class*="css"] {
     margin-bottom: 1.25rem;
 }
 
-/* KPI cards */
+/* KPI cards — equal height via flexbox */
+[data-testid="column"] > div:first-child {
+    height: 100%;
+}
 .kpi-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: #1e293b;
+    border: 1px solid #334155;
     border-radius: 8px;
     padding: 1.1rem 1.25rem;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 120px;
+    height: 100%;
+    box-sizing: border-box;
 }
 .kpi-label {
     font-size: 0.72rem;
@@ -128,7 +137,7 @@ html, body, [class*="css"] {
 .kpi-value {
     font-size: 1.95rem;
     font-weight: 700;
-    color: #1a202c;
+    color: #f1f5f9;
     line-height: 1.1;
     letter-spacing: -0.025em;
 }
@@ -139,15 +148,15 @@ html, body, [class*="css"] {
     margin-top: 0.3rem;
     line-height: 1.5;
 }
-.kpi-note.warn  { color: #d97706; }
-.kpi-note.good  { color: #16a34a; }
-.kpi-note.alert { color: #dc2626; }
+.kpi-note.warn  { color: #f59e0b; }
+.kpi-note.good  { color: #22c55e; }
+.kpi-note.alert { color: #ef4444; }
 
 /* Insight cards */
 .insight-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-left: 3px solid #2563eb;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-left: 3px solid #3b82f6;
     border-radius: 6px;
     padding: 0.875rem 1.1rem;
     margin-bottom: 0.625rem;
