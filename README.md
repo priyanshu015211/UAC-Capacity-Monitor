@@ -4,8 +4,23 @@
 
 A production-ready analytics dashboard that turns raw daily headcounts into actionable capacity intelligence for the HHS Unaccompanied Children care program — now with ML-powered demand forecasting.
 
+🌐 **Live Demo:**  
 [Open the live dashboard →](https://priyanshu-uac-capacity-monitor.streamlit.app/)
- 
+
+## Screenshots
+
+### Dashboard Overview
+
+![Dashboard Overview](images/image_2026-06-09_200726440.png)
+
+### Forecasting Module
+
+![Forecasting Module](images/image_2026-06-09_200329942.png)
+
+### KPI Monitoring
+
+![KPI Monitoring](images/image_2026-06-09_200822238.png)
+
 ---
 
 ## Table of Contents
@@ -154,7 +169,7 @@ uac-capacity-monitor/
 ## Dashboard Overview
 
 The dashboard has a persistent sidebar for filters and **7 tabs** for different views of the data.
-![Dashboard Overview](images/image_2026-06-09_200726440.png)
+
 
 ### Sidebar Controls
 
@@ -238,7 +253,7 @@ An additive time-series model that decomposes the signal into three components a
 
 Prophet requires a separate install (`pip install prophet`) but the dashboard degrades gracefully if it is absent — all other functionality remains available.
 
-![Forecasting Module](images/image_2026-06-09_200329942.png)
+
 
 ### Evaluation
 
@@ -256,8 +271,6 @@ A side-by-side comparison table is shown in the Forecast tab when both models ar
 ---
 
 ## KPIs and Metrics
-
-![KPI Monitoring](images/image_2026-06-09_200822238.png)
 
 ### Derived Metrics
 
@@ -378,4 +391,4 @@ Dataset provided by Unified Mentor as part of the Data Analytics Internship prog
 
 ---
 
-*Built during a Machine Learning internship at Unified Mentor · April 2026*
+*Built during a Machine Learning internship at Unified Mentor ·*
