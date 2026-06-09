@@ -173,7 +173,7 @@ The dashboard has a persistent sidebar for filters and **7 tabs** for different 
 | Metric comparison | Custom overlay chart for any selected metrics, summary statistics table |
 | Findings | Auto-generated narrative insights, early vs late grouped bar chart, stress window and relief period tables, executive summary, downloadable report and exec summary |
 | Data quality | Validation summary cards, rule violation breakdown, anomaly sample table, imputed rows calendar, raw data expander with CSV export |
-| 🔮 Forecast (ML) | ML demand forecast with confidence bands, test-set evaluation, feature importance chart, model comparison table, CSV export |
+|  Forecast (ML) | ML demand forecast with confidence bands, test-set evaluation, feature importance chart, model comparison table, CSV export |
 
 ### KPI Cards
 
